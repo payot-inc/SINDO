@@ -126,7 +126,7 @@
           <dl>
             <dt>투입된 금액</dt>
             <dd>
-              <b>0</b> 원
+              <b>{{ amount | numeral('0,0') }}</b> 원
             </dd>
           </dl>
         </div>
@@ -137,32 +137,66 @@
 
 <script>
 import { of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { delay, map, filter, take, tap } from 'rxjs/operators';
+import numeral from 'numeral';
 
 export default {
+  data() {
+    return {
+      amount: 0,
+    };
+  },
   computed: {
     total() {
       return this.$route.params.products
-        .map(item => {
+        .map((item) => {
           return item.count * item.product.price;
         })
         .reduce((acc, value) => acc + value, 0);
-    }
+    },
+  },
+  mounted() {
+    const self = this;
+    this.serialport.messageEvent
+      .pipe(
+        filter(({ type }) => type === 'response'),
+        filter(({ commend }) => commend.label === 'cash'),
+        filter(({ data }) => data[0].amount),
+        map(({ data }) => Number(data[0].amount)),
+      )
+      .subscribe((price) => {
+        this.amount += price;
+      });
+
+    this.serialport.messageEvent
+      .pipe(
+        filter(({ type }) => type === 'response'),
+        filter(({ commend }) => commend.label === 'cash'),
+        filter(({ data }) => data[0].methodRunning),
+        map(({ data }) => data),
+        take(1),
+      )
+      .subscribe(
+        () => {
+          self.$router.push({ name: 'finish', params: { products: self.$route.params.products, payType: 'cash' } });
+        },
+        () => {},
+      );
   },
   methods: {
     async pay(type) {
-      this.$bvModal.msgBoxOk('자판기가 연결되어있지않아 결제를 진행할 수 없습니다', {
-        size: 'lg',
-        centered: true,
-        okTitle: '확인'
-      });
-      // const amount = this.total;
-      // type === 'card' ? this.$refs.cardModal.show() : this.$refs.cashModal.show();
+      const amount = this.total;
 
-      // await of(null).pipe(delay(1000 * 5)).toPromise();
+      type === 'card'
+        ? this.$bvModal.msgBoxOk('현재 카드결제는 진행할 수 없습니다', {
+            size: 'lg',
+            centered: true,
+            okTitle: '확인',
+          })
+        : this.$refs.cashModal.show();
 
-      // this.$router.push({ name: 'finish', params: { products: this.$route.params.products, payType: type } });
-    }
-  }
+      if (type === 'cash') this.serialport.write(`[q B T${numeral(amount).format('000000')}&Q001/R001/S001&Q001/R002/S001&Q002/R001/S002]`);
+    },
+  },
 };
 </script>

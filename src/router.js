@@ -37,5 +37,9 @@ export default new Router({
       name: 'finish',
       component: Finish,
     },
+    {
+      path: '*',
+      redirect: '/',
+    },
   ],
 });

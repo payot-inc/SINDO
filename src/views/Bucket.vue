@@ -92,14 +92,6 @@
       </div>
     </div>
     <!-- product -->
-
-    <!-- <div id="status-bar">
-      <ul class="status-list">
-        <li>인터넷</li>
-        <li>터치</li>
-      </ul>
-      <div class="time">10:10</div>
-    </div> -->
   </div>
 </template>
 

@@ -16,11 +16,11 @@
 
 <script>
 export default {
-  metaInfo: {
-    meta: [
-      { charset: 'utf-8' },
-      { name: 'viewport', content: 'width=1080, initial-scale=1' },
-    ],
+  data() {
+    return {
+      time: '',
+    }
   },
+  methods: {},
 };
 </script>
